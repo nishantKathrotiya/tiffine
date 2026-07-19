@@ -19,6 +19,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 type State =
   | "loading"
   | "unsupported"
+  | "not-configured"
   | "ios-needs-install"
   | "denied"
   | "subscribed"
@@ -68,8 +69,11 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
   }, []);
 
   async function detectState() {
+    // Distinguished from "unsupported": the browser is fine, the server just
+    // has no VAPID key. Reporting that as a browser limitation sends people
+    // chasing the wrong problem — this is a deployment config gap.
     if (!vapidPublicKey) {
-      setState("unsupported");
+      setState("not-configured");
       return;
     }
 
@@ -215,6 +219,17 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
                 <span>Open Tiffine from the home screen, then come back here</span>
               </li>
             </ol>
+          </div>
+        )}
+
+        {state === "not-configured" && (
+          <div className="border-warning-border bg-warning-subtle rounded-md border px-3 py-2.5">
+            <p className="text-warning text-body font-medium">Not set up on the server</p>
+            <p className="text-warning text-caption mt-1 opacity-90">
+              NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing from this deployment. Add it in the
+              hosting dashboard and redeploy — public env vars are baked in at build time, so
+              adding one without redeploying has no effect.
+            </p>
           </div>
         )}
 

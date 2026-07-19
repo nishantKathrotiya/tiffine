@@ -16,7 +16,8 @@
     "seed:owner": "tsx scripts/seed-owner.mts",
     "verify:settlement": "tsx scripts/verify-settlement.mts",
     "verify:push": "tsx scripts/verify-push.mts",
-    "check:cron": "tsx scripts/check-cron.mts"
+    "check:cron": "tsx scripts/check-cron.mts",
+    "check:push": "tsx scripts/check-push.mts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
