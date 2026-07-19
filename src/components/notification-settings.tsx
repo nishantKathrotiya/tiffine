@@ -93,10 +93,31 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
     }
 
     try {
-      const registration = await navigator.serviceWorker.ready;
+      /**
+       * `serviceWorker.ready` never resolves when nothing has been registered
+       * yet — it waits forever rather than rejecting, which left this card
+       * stuck on "Checking…" for every first-time visitor.
+       *
+       * `getRegistration()` settles either way, and the race is a backstop for
+       * browsers that leave it pending on a hard-refreshed worker.
+       */
+      const registration = await Promise.race([
+        navigator.serviceWorker.getRegistration(),
+        new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 3000)),
+      ]);
+
+      if (!registration) {
+        // No worker yet — normal before the first opt-in. Enabling registers it.
+        setState("unsubscribed");
+        return;
+      }
+
       const existing = await registration.pushManager.getSubscription();
       setState(existing ? "subscribed" : "unsubscribed");
-    } catch {
+    } catch (error) {
+      // Any failure here still means "not subscribed", which is actionable —
+      // unlike a spinner that never resolves.
+      console.error("[push] subscription check failed", error);
       setState("unsubscribed");
     }
   }
@@ -106,7 +127,10 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
 
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
+
+      // Deliberately not awaiting `serviceWorker.ready` — it can hang
+      // indefinitely, and `register()` already resolves with a registration
+      // that pushManager.subscribe() accepts.
 
       // Must follow a user gesture — this runs from a click handler.
       const permission = await Notification.requestPermission();
@@ -146,8 +170,8 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
     setIsWorking(true);
 
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const registration = await navigator.serviceWorker.getRegistration();
+      const subscription = await registration?.pushManager.getSubscription();
 
       if (subscription) {
         // Deactivated server-side only. Calling subscription.unsubscribe()
