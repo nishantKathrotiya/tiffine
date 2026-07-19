@@ -7,7 +7,7 @@ import { assertIsAdmin, type Viewer } from "@/lib/auth/permissions";
 import { AppError, errors } from "@/lib/api/errors";
 import { getDateKey, formatTime, isPast } from "@/lib/time";
 import { sendPushToApproved } from "@/lib/push";
-import { scheduleDeadlineClose } from "@/lib/scheduler";
+import { scheduleDeadlineClose, scheduleDeadlineReminder } from "@/lib/scheduler";
 import { publicEnv } from "@/lib/env";
 
 /**
@@ -278,6 +278,13 @@ export async function publishMenuDay(viewer: Viewer, dateKey: string): Promise<v
     dateKey,
     deadlineAt: day.deadlineAt,
   }).catch((error) => console.error("[scheduler] publish schedule failed", error));
+
+  // A second callback 30 minutes earlier, nudging anyone who hasn't ordered.
+  void scheduleDeadlineReminder({
+    menuDayId: day.id,
+    dateKey,
+    deadlineAt: day.deadlineAt,
+  }).catch((error) => console.error("[scheduler] reminder schedule failed", error));
 
   // Notifications are a nudge only — publishing must succeed even if every
   // push fails, so this never rethrows.

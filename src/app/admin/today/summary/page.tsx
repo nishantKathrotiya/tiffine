@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getProviderHandoff } from "@/lib/services/day-service";
-import { getPendingCancellationCount } from "@/lib/services/cancellation-service";
 import { AppShell } from "@/components/app-shell";
 import { ProviderHandoff } from "./provider-handoff";
 import { formatDayLong, getDateKey } from "@/lib/time";
@@ -23,14 +22,13 @@ export default async function ProviderSummaryPage({
   const params = await searchParams;
   const dateKey = params.date ?? getDateKey();
 
-  const [handoff, pendingCount, pendingCancellations] = await Promise.all([
+  const [handoff, badges] = await Promise.all([
     getProviderHandoff(viewer, dateKey).catch(() => null),
-    getPendingCount(viewer),
-    getPendingCancellationCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount + pendingCancellations}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">Counts for the provider</h1>

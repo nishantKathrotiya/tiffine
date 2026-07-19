@@ -14,7 +14,7 @@ import {
 import { assertCanPlaceOrders, assertIsAdmin, type Viewer } from "@/lib/auth/permissions";
 import { AppError, errors } from "@/lib/api/errors";
 import { formatDayShort, isPast } from "@/lib/time";
-import { sendPushToPeople } from "@/lib/push";
+import { sendPushToAdmins, sendPushToPeople } from "@/lib/push";
 
 /**
  * Cancellations after the deadline.
@@ -99,6 +99,13 @@ export async function requestCancellation(
       reason: input.reason?.trim() || null,
     })
     .returning({ id: cancellationRequests.id });
+
+  void sendPushToAdmins({
+    title: "Cancellation requested",
+    body: `${viewer.name} wants to cancel their order for ${formatDayShort(input.dateKey)}.`,
+    url: "/admin/cancellations",
+    tag: `cancel-req-${created.id}`,
+  }).catch((error) => console.error("[push] cancellation request notify failed", error));
 
   await db.insert(auditLog).values({
     actorId: viewer.id,

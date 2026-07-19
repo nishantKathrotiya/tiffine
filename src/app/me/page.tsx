@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { getViewer } from "@/lib/auth/session";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getOrderHistory, getPersonRunningTotal } from "@/lib/services/order-service";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -22,14 +22,14 @@ export default async function MyOrdersPage() {
   const today = getDateKey();
   const monthStart = `${today.slice(0, 7)}-01`;
 
-  const [history, running, pendingCount] = await Promise.all([
+  const [history, running, badges] = await Promise.all([
     getOrderHistory(viewer.id),
     getPersonRunningTotal(viewer.id, monthStart, today),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">My orders</h1>

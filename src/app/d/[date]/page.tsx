@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { UtensilsCrossed } from "lucide-react";
 import { getViewer } from "@/lib/auth/session";
 import { canPlaceOrders } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getMyCancellationRequest } from "@/lib/services/cancellation-service";
 import { getOrderingContext } from "@/lib/services/order-service";
 import { AppShell } from "@/components/app-shell";
@@ -29,14 +29,14 @@ export default async function OrderDayPage({
   if (!viewer) redirect(`/signin?next=/d/${date}`);
   if (!isValidDateKey(date)) redirect("/");
 
-  const [context, pendingCount, cancellation] = await Promise.all([
+  const [context, badges, cancellation] = await Promise.all([
     getOrderingContext(viewer, date),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
     getMyCancellationRequest(viewer.id, date),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">

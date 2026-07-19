@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getMenuDay } from "@/lib/services/menu-service";
 import { getDayBreakdown } from "@/lib/services/day-service";
 import { AppShell } from "@/components/app-shell";
@@ -23,9 +23,9 @@ export default async function RepollPage({
   const params = await searchParams;
   const dateKey = params.date ?? getDateKey();
 
-  const [menu, pendingCount] = await Promise.all([
+  const [menu, badges] = await Promise.all([
     getMenuDay(dateKey),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   if (!menu) redirect(`/admin/today?date=${dateKey}`);
@@ -43,7 +43,7 @@ export default async function RepollPage({
   }
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">New round</h1>

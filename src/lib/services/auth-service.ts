@@ -7,6 +7,7 @@ import { fakeVerifyPassword, hashPassword, verifyPassword } from "@/lib/auth/pas
 import { createSession, getIpHash } from "@/lib/auth/session";
 import { canSignIn } from "@/lib/auth/permissions";
 import { AppError } from "@/lib/api/errors";
+import { sendPushToAdmins } from "@/lib/push";
 
 /**
  * Sign-up and sign-in.
@@ -134,6 +135,14 @@ export async function signUp(input: {
     entityId: created.id,
     detail: { email, name },
   });
+
+  // Deep would otherwise only discover a signup by opening the app.
+  void sendPushToAdmins({
+    title: "New member waiting",
+    body: `${name} signed up and needs approving before they can order.`,
+    url: "/admin/people",
+    tag: `signup-${created.id}`,
+  }).catch((error) => console.error("[push] signup notify failed", error));
 
   await createSession(created.id);
   return { personId: created.id, accountStatus: created.accountStatus };

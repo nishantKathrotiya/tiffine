@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getMemberDetail, getMemberOrderBounds } from "@/lib/services/member-service";
 import { AppShell } from "@/components/app-shell";
 import { MemberOrders } from "./member-orders";
@@ -29,16 +29,16 @@ export default async function MemberDetailPage({
   const fromDateKey = from && isValidDateKey(from) ? from : undefined;
   const toDateKey = to && isValidDateKey(to) ? to : undefined;
 
-  const [detail, bounds, pendingCount] = await Promise.all([
+  const [detail, bounds, badges] = await Promise.all([
     getMemberDetail(viewer, id, { fromDateKey, toDateKey }).catch(() => null),
     getMemberOrderBounds(viewer, id).catch(() => ({ first: null, last: null })),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   if (!detail) redirect("/admin/members");
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <MemberOrders
           memberId={id}

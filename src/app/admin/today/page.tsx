@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getMenuDay, getRecentItems } from "@/lib/services/menu-service";
 import { AppShell } from "@/components/app-shell";
 import { MenuBuilder } from "./menu-builder";
@@ -23,14 +23,14 @@ export default async function AdminTodayPage({
   const params = await searchParams;
   const dateKey = params.date ?? getDateKey();
 
-  const [existing, recentItems, pendingCount] = await Promise.all([
+  const [existing, recentItems, badges] = await Promise.all([
     getMenuDay(dateKey),
     getRecentItems(),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">Today&rsquo;s menu</h1>

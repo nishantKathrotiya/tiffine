@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { AppShell } from "@/components/app-shell";
 import { SettlementBuilder } from "./settlement-builder";
 import { getDateKey } from "@/lib/time";
@@ -14,11 +14,11 @@ export default async function NewSettlementPage() {
   if (!viewer) redirect("/signin");
   if (!isActiveAdmin(viewer)) redirect("/");
 
-  const pendingCount = await getPendingCount(viewer);
+  const badges = await getBadgeCounts(viewer);
   const today = getDateKey();
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">New settlement</h1>

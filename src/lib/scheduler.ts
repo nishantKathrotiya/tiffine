@@ -45,6 +45,84 @@ function isReachable(appUrl: string): boolean {
  * Returns the message id (also persisted) or null when scheduling was skipped
  * or failed.
  */
+/**
+ * How long before the deadline the "haven't ordered yet" nudge fires.
+ *
+ * 30 minutes is enough time to actually place an order, and late enough that
+ * most people who intended to order already have — so the reminder mostly
+ * reaches the ones who forgot.
+ */
+const REMINDER_LEAD_MINUTES = 30;
+
+/**
+ * Schedule the pre-deadline reminder.
+ *
+ * Separate message from the close callback so either can be cancelled
+ * independently — closing early must kill the reminder without disturbing
+ * anything else.
+ */
+export async function scheduleDeadlineReminder(input: {
+  menuDayId: string;
+  dateKey: string;
+  deadlineAt: Date;
+}): Promise<string | null> {
+  const qstash = getClient();
+  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL;
+
+  if (!qstash || !appUrl || !isReachable(appUrl)) return null;
+
+  await cancelDeadlineReminder(input.menuDayId);
+
+  const remindAt = new Date(input.deadlineAt.getTime() - REMINDER_LEAD_MINUTES * 60 * 1000);
+  const secondsUntil = Math.floor((remindAt.getTime() - Date.now()) / 1000);
+
+  // A deadline less than 30 minutes out gets no reminder — firing one
+  // immediately after publishing would just duplicate the "menu is up" push.
+  if (secondsUntil <= 0) return null;
+  if (secondsUntil > 7 * 24 * 60 * 60) return null;
+
+  try {
+    const result = await qstash.publishJSON({
+      url: `${appUrl}/api/qstash/remind-deadline`,
+      body: { menuDayId: input.menuDayId, dateKey: input.dateKey },
+      notBefore: Math.floor(remindAt.getTime() / 1000),
+      retries: 2,
+    });
+
+    await db
+      .update(menuDays)
+      .set({ reminderJobId: result.messageId })
+      .where(eq(menuDays.id, input.menuDayId));
+
+    return result.messageId;
+  } catch (error) {
+    console.error("[scheduler] failed to schedule reminder", error);
+    return null;
+  }
+}
+
+export async function cancelDeadlineReminder(menuDayId: string): Promise<void> {
+  const qstash = getClient();
+  if (!qstash) return;
+
+  const [day] = await db
+    .select({ jobId: menuDays.reminderJobId })
+    .from(menuDays)
+    .where(eq(menuDays.id, menuDayId))
+    .limit(1);
+
+  if (!day?.jobId) return;
+
+  try {
+    await qstash.messages.cancel(day.jobId);
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status !== 404) console.error("[scheduler] failed to cancel reminder", error);
+  }
+
+  await db.update(menuDays).set({ reminderJobId: null }).where(eq(menuDays.id, menuDayId));
+}
+
 export async function scheduleDeadlineClose(input: {
   menuDayId: string;
   dateKey: string;

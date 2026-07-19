@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getSettlementRun } from "@/lib/services/settlement-service";
 import { AppShell } from "@/components/app-shell";
 import { RunDetail } from "./run-detail";
@@ -21,9 +21,9 @@ export default async function SettlementRunPage({
   if (!isActiveAdmin(viewer)) redirect("/");
 
   const { run: runId } = await params;
-  const [detail, pendingCount] = await Promise.all([
+  const [detail, badges] = await Promise.all([
     getSettlementRun(viewer, runId).catch(() => null),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   if (!detail) redirect("/admin/payments");
@@ -31,7 +31,7 @@ export default async function SettlementRunPage({
   const periodLabel = `${formatDayShort(String(detail.run.periodStart))} – ${formatDayShort(String(detail.run.periodEnd))}`;
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">Settlement</h1>

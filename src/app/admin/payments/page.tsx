@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Plus, Wallet } from "lucide-react";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getPaymentsOverview, listSettlementRuns } from "@/lib/services/settlement-service";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -20,14 +20,14 @@ export default async function PaymentsDashboardPage() {
   if (!viewer) redirect("/signin");
   if (!isActiveAdmin(viewer)) redirect("/");
 
-  const [overview, runs, pendingCount] = await Promise.all([
+  const [overview, runs, badges] = await Promise.all([
     getPaymentsOverview(viewer),
     listSettlementRuns(viewer),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>

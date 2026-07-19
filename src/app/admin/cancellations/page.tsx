@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
 import { isActiveAdmin } from "@/lib/auth/permissions";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { listPendingCancellations } from "@/lib/services/cancellation-service";
 import { AppShell } from "@/components/app-shell";
 import { CancellationQueue } from "./cancellation-queue";
@@ -16,13 +16,13 @@ export default async function CancellationsPage() {
   if (!viewer) redirect("/signin");
   if (!isActiveAdmin(viewer)) redirect("/");
 
-  const [requests, pendingCount] = await Promise.all([
+  const [requests, badges] = await Promise.all([
     listPendingCancellations(viewer),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount + requests.length}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">Cancellations</h1>

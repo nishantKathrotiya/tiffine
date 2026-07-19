@@ -127,6 +127,7 @@ export const menuDays = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }),
     title: text("title"),
     deadlineJobId: text("deadline_job_id"),
+    reminderJobId: text("reminder_job_id"),
     createdBy: uuid("created_by").references(() => people.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

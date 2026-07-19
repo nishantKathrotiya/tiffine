@@ -16,6 +16,8 @@ import { assertIsAdmin, type Viewer } from "@/lib/auth/permissions";
 import { AppError, errors } from "@/lib/api/errors";
 import { sumPaise, type Paise } from "@/lib/money";
 import { eachDateKeyInRange, formatDayShort, type DateKey } from "@/lib/time";
+import { sendPushToPeople } from "@/lib/push";
+import { formatPaise } from "@/lib/money";
 
 /**
  * Settlement: turning a date range into per-person amounts owed.
@@ -258,6 +260,20 @@ export async function commitSettlement(
     },
   });
 
+  // Each person is told their own amount, not the group total — a shared
+  // message would make everyone check the app to find their line.
+  const periodLabel = `${formatDayShort(input.periodStart)} – ${formatDayShort(input.periodEnd)}`;
+  await Promise.all(
+    perPerson.map((row) =>
+      sendPushToPeople([row.personId], {
+        title: "Your tiffin bill is ready",
+        body: `${formatPaise(row.totalPaise)} for ${periodLabel}. Tap to see the breakdown.`,
+        url: "/me/payments",
+        tag: `settlement-${run.id}`,
+      }).catch((error) => console.error("[push] settlement notify failed", error)),
+    ),
+  );
+
   return { runId: run.id, totalPaise, personCount: perPerson.length };
 }
 
@@ -416,6 +432,17 @@ export async function setPaymentStatus(
       markedBy: viewer.id,
     })
     .where(eq(settlementLines.id, input.lineId));
+
+  // Only on 'paid': a receipt closes the loop. Reverting to unpaid or waiving
+  // is admin bookkeeping and pinging about it would be noise.
+  if (input.status === "paid") {
+    void sendPushToPeople([line.personId], {
+      title: "Payment received",
+      body: `${formatPaise(Number(line.totalPaise))} marked as paid. You're settled up.`,
+      url: "/me/payments",
+      tag: `paid-${line.id}`,
+    }).catch((error) => console.error("[push] payment notify failed", error));
+  }
 
   await db.insert(auditLog).values({
     actorId: viewer.id,

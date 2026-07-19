@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { isActiveAdmin } from "@/lib/auth/permissions";
 import { getPendingCount, listPeople } from "@/lib/services/people-service";
 import { AppShell } from "@/components/app-shell";
@@ -16,13 +17,13 @@ export default async function AdminPeoplePage() {
   // being unreachable in the nav is not a control.
   if (!isActiveAdmin(viewer)) redirect("/");
 
-  const [people, pendingCount] = await Promise.all([
+  const [people, badges] = await Promise.all([
     listPeople(viewer),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-4xl space-y-4">
         <header>
           <h1 className="text-display text-text">People</h1>
@@ -35,8 +36,8 @@ export default async function AdminPeoplePage() {
           <CardHeader
             title="Group members"
             description={
-              pendingCount > 0
-                ? `${pendingCount} waiting for approval`
+              badges.pendingMembers > 0
+                ? `${badges.pendingMembers} waiting for approval`
                 : "Everyone is up to date"
             }
           />

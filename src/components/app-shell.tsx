@@ -14,6 +14,7 @@ import type { Viewer } from "@/lib/auth/permissions";
 import { isActiveAdmin } from "@/lib/auth/permissions";
 import { SignOutButton } from "./sign-out-button";
 import { cn } from "@/lib/cn";
+import { NO_BADGES, type BadgeCounts } from "@/lib/services/badge-service";
 
 /**
  * Shared chrome: bottom nav on phones, sidebar on desktop.
@@ -63,12 +64,12 @@ const MOBILE_ADMIN_TAB: NavItem = {
 
 export function AppShell({
   viewer,
-  pendingCount = 0,
+  badges = NO_BADGES,
   children,
 }: {
   viewer: Viewer;
-  /** Badge on the People tab so an approval queue isn't missed. */
-  pendingCount?: number;
+  /** Approval and cancellation counts, so neither queue goes unnoticed. */
+  badges?: BadgeCounts;
   children: React.ReactNode;
 }) {
   const isAdmin = isActiveAdmin(viewer);
@@ -100,7 +101,7 @@ export function AppShell({
             the header and sign-out stay pinned either way. */}
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
           {sidebarItems.map((item) => (
-            <NavLink key={item.href} item={item} badge={badgeFor(item, pendingCount)} />
+            <NavLink key={item.href} item={item} badge={badgeFor(item, badges)} />
           ))}
         </nav>
 
@@ -160,18 +161,25 @@ export function AppShell({
           list rows show through and read as overlapping text. */}
       <nav className="border-line bg-surface pb-safe fixed inset-x-0 bottom-0 z-30 flex border-t md:hidden">
         {mobileItems.map((item) => (
-          <MobileNavLink key={item.href} item={item} badge={badgeFor(item, pendingCount)} />
+          <MobileNavLink key={item.href} item={item} badge={badgeFor(item, badges)} />
         ))}
       </nav>
     </div>
   );
 }
 
-function badgeFor(item: NavItem, pendingCount: number): number {
-  // The condensed mobile "Admin" tab stands in for People, so it carries the
-  // approval badge — otherwise a pending signup would be invisible on a phone.
-  const carriesBadge = item.href === "/admin/people" || item.label === "Admin";
-  return carriesBadge ? pendingCount : 0;
+/**
+ * Which nav entry shows which count.
+ *
+ * The condensed mobile "Admin" tab stands in for every admin page, so it
+ * carries the SUM — otherwise a pending signup or cancellation would be
+ * invisible on a phone, where those pages aren't tabs of their own.
+ */
+function badgeFor(item: NavItem, badges: BadgeCounts): number {
+  if (item.label === "Admin") return badges.pendingMembers + badges.pendingCancellations;
+  if (item.href === "/admin/people") return badges.pendingMembers;
+  if (item.href === "/admin/cancellations") return badges.pendingCancellations;
+  return 0;
 }
 
 function NavLink({ item, badge }: { item: NavItem; badge: number }) {
@@ -213,7 +221,7 @@ function Badge({ count }: { count: number }) {
   return (
     <span
       className="bg-primary text-text-on-primary inline-flex min-w-4.5 items-center justify-center rounded-full px-1.5 py-0.5 text-caption font-medium"
-      aria-label={`${count} awaiting approval`}
+      aria-label={`${count} waiting`}
     >
       {count}
     </span>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { getViewer } from "@/lib/auth/session";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { getMyPayments } from "@/lib/services/settlement-service";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -18,9 +18,9 @@ export default async function MyPaymentsPage() {
   const viewer = await getViewer();
   if (!viewer) redirect("/signin?next=/me/payments");
 
-  const [payments, pendingCount] = await Promise.all([
+  const [payments, badges] = await Promise.all([
     getMyPayments(viewer.id),
-    getPendingCount(viewer),
+    getBadgeCounts(viewer),
   ]);
 
   const outstanding = sumPaise(
@@ -28,7 +28,7 @@ export default async function MyPaymentsPage() {
   );
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">My payments</h1>

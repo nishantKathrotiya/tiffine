@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth/session";
-import { getPendingCount } from "@/lib/services/people-service";
+import { getBadgeCounts } from "@/lib/services/badge-service";
 import { AppShell } from "@/components/app-shell";
 import { NotificationSettings } from "@/components/notification-settings";
 import { AccountStatusBanner } from "@/components/account-status-banner";
@@ -14,10 +14,10 @@ export default async function SettingsPage() {
   const viewer = await getViewer();
   if (!viewer) redirect("/signin?next=/settings");
 
-  const pendingCount = await getPendingCount(viewer);
+  const badges = await getBadgeCounts(viewer);
 
   return (
-    <AppShell viewer={viewer} pendingCount={pendingCount}>
+    <AppShell viewer={viewer} badges={badges}>
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header>
           <h1 className="text-display text-text">Settings</h1>
