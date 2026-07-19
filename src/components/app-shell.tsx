@@ -6,6 +6,7 @@ import {
   Home,
   Settings,
   UtensilsCrossed,
+  UserSearch,
   Users,
   Wallet,
 } from "lucide-react";
@@ -43,6 +44,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/payments", label: "Billing", Icon: Wallet, adminOnly: true },
   { href: "/me", label: "History", Icon: CalendarDays },
   { href: "/me/payments", label: "Payments", Icon: Wallet },
+  { href: "/admin/members", label: "Members", Icon: UserSearch, adminOnly: true },
   { href: "/admin/people", label: "People", Icon: Users, adminOnly: true },
   { href: "/settings", label: "Settings", Icon: Settings },
 ];

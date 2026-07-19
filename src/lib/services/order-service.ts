@@ -250,8 +250,19 @@ export async function placeOrder(
   };
 }
 
-/** A person's order history, newest first, for /me. */
-export async function getOrderHistory(personId: string, limit = 60) {
+/**
+ * A person's order history, newest first.
+ *
+ * Backs both `/me` (no range — recent activity) and the admin per-person view
+ * (range-filtered). One query rather than two so the totals a member sees can
+ * never drift from the ones an admin sees.
+ */
+export async function getOrderHistory(
+  personId: string,
+  options: { limit?: number; fromDateKey?: string; toDateKey?: string } = {},
+) {
+  const { limit = 60, fromDateKey, toDateKey } = options;
+
   const rows = await db
     .select({
       orderId: orders.id,
@@ -270,7 +281,13 @@ export async function getOrderHistory(personId: string, limit = 60) {
     })
     .from(orders)
     .innerJoin(menuDays, eq(menuDays.id, orders.menuDayId))
-    .where(eq(orders.personId, personId))
+    .where(
+      and(
+        eq(orders.personId, personId),
+        fromDateKey ? gte(menuDays.dateKey, fromDateKey) : undefined,
+        toDateKey ? lte(menuDays.dateKey, toDateKey) : undefined,
+      ),
+    )
     .orderBy(desc(menuDays.dateKey))
     .limit(limit);
 
