@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — the single source of truth for the whole app.
+ *
+ * Structural conventions (8px scale, 16px card radius, Inter, mono numerals,
+ * strict tokens) are carried over from claude/design.md. The visual language is
+ * not: that file specs a desktop electrical-monitoring dashboard. This app is
+ * mobile-first and food-oriented, so the palette and layout differ deliberately.
+ *
+ * Components must never hardcode a hex or a px value. Consistency comes from
+ * there being nothing else to reach for.
+ */
+
+:root {
+  /* Surfaces */
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #e7e3dd;
+  --border-strong: #d6d0c7;
+
+  /* Text */
+  --text: #1c1917;
+  --text-muted: #78716c;
+  --text-subtle: #857f7a;
+  --text-on-primary: #ffffff;
+
+  /*
+   * Primary — warm saffron, darkened from the obvious #d97706 so white label
+   * text clears 4.5:1. The brighter shade measured 3.19:1 and failed AA; these
+   * values are chosen from measured contrast, not by eye.
+   */
+  --primary: #b45309;
+  --primary-hover: #9a4a06;
+  --primary-subtle: #fef3e2;
+  --primary-border: #f5d0a0;
+
+  /* Status. Each pairs a strong tone with a subtle background. */
+  --success: #146c34;
+  --success-subtle: #e8f5ec;
+  --success-border: #b7dfc4;
+
+  --warning: #b45309;
+  --warning-subtle: #fef3e2;
+  --warning-border: #f5d0a0;
+
+  --danger: #b91c1c;
+  --danger-subtle: #fdeaea;
+  --danger-border: #f3bcbc;
+
+  --info: #1d4ed8;
+  --info-subtle: #e8eefc;
+  --info-border: #bdcff5;
+
+  --focus-ring: #d97706;
+  --overlay: rgb(28 25 23 / 0.45);
+}
+
+/*
+ * Dark theme. Applied by prefers-color-scheme, and overridable in both
+ * directions by an explicit data-theme on the root for a manual toggle.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16130f;
+    --surface: #211d18;
+    --surface-raised: #2a251f;
+    --border: #38312a;
+    --border-strong: #4a4139;
+
+    --text: #f5f1eb;
+    --text-muted: #a8a29e;
+    --text-subtle: #78716c;
+    --text-on-primary: #1c1917;
+
+    --primary: #f59e0b;
+    --primary-hover: #fbbf24;
+    --primary-subtle: #2e2113;
+    --primary-border: #4d3a1c;
+
+    --success: #4ade80;
+    --success-subtle: #14251a;
+    --success-border: #1f3d29;
+
+    --warning: #fbbf24;
+    --warning-subtle: #2e2113;
+    --warning-border: #4d3a1c;
+
+    --danger: #f87171;
+    --danger-subtle: #2b1616;
+    --danger-border: #4a2222;
+
+    --info: #93b4fc;
+    --info-subtle: #161d2e;
+    --info-border: #22304d;
+
+    --focus-ring: #f59e0b;
+    --overlay: rgb(0 0 0 / 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #16130f;
+  --surface: #211d18;
+  --surface-raised: #2a251f;
+  --border: #38312a;
+  --border-strong: #4a4139;
+
+  --text: #f5f1eb;
+  --text-muted: #a8a29e;
+  --text-subtle: #78716c;
+  --text-on-primary: #1c1917;
+
+  --primary: #f59e0b;
+  --primary-hover: #fbbf24;
+  --primary-subtle: #2e2113;
+  --primary-border: #4d3a1c;
+
+  --success: #4ade80;
+  --success-subtle: #14251a;
+  --success-border: #1f3d29;
+
+  --warning: #fbbf24;
+  --warning-subtle: #2e2113;
+  --warning-border: #4d3a1c;
+
+  --danger: #f87171;
+  --danger-subtle: #2b1616;
+  --danger-border: #4a2222;
+
+  --info: #93b4fc;
+  --info-subtle: #161d2e;
+  --info-border: #22304d;
+
+  --focus-ring: #f59e0b;
+  --overlay: rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-on-primary: var(--text-on-primary);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-border: var(--primary-border);
+
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-border: var(--success-border);
+
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-border: var(--warning-border);
+
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-border: var(--danger-border);
+
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-border: var(--info-border);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --text-display: 24px;
+  --text-display--line-height: 32px;
+  --text-display--font-weight: 600;
+
+  --text-title: 18px;
+  --text-title--line-height: 26px;
+  --text-title--font-weight: 600;
+
+  --text-body: 14px;
+  --text-body--line-height: 21px;
+
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-label--font-weight: 500;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 21px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Tabular figures for every number. This is functional, not decorative:
+   * it makes rupee columns in the settlement tables align digit-for-digit,
+   * which is the screen Deep uses to chase payments.
+   */
+  .font-mono,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respect reduced-motion rather than animating regardless. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Keeps bottom-nav content clear of the iOS home indicator. */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--border) 25%,
+      var(--surface-raised) 50%,
+      var(--border) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
