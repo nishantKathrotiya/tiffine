@@ -23,11 +23,15 @@ import { cn } from "@/lib/cn";
 
 type NavItem = { href: string; label: string; Icon: typeof Home; adminOnly?: boolean };
 
+/**
+ * Sidebar order follows the daily admin workflow: publish the menu, send the
+ * counts, handle cancellations, then billing — with personal pages after.
+ *
+ * Non-admins see only the entries without `adminOnly`, which stay in the same
+ * relative order (Today, History, Payments, People, Settings).
+ */
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Today", Icon: Home },
-  { href: "/me", label: "History", Icon: CalendarDays },
-  { href: "/me/payments", label: "Payments", Icon: Wallet },
-  { href: "/settings", label: "Settings", Icon: Settings },
   { href: "/admin/today", label: "Menu", Icon: UtensilsCrossed, adminOnly: true },
   {
     href: "/admin/today/summary",
@@ -37,7 +41,10 @@ const NAV_ITEMS: NavItem[] = [
   },
   { href: "/admin/cancellations", label: "Cancels", Icon: Ban, adminOnly: true },
   { href: "/admin/payments", label: "Billing", Icon: Wallet, adminOnly: true },
+  { href: "/me", label: "History", Icon: CalendarDays },
+  { href: "/me/payments", label: "Payments", Icon: Wallet },
   { href: "/admin/people", label: "People", Icon: Users, adminOnly: true },
+  { href: "/settings", label: "Settings", Icon: Settings },
 ];
 
 /**
