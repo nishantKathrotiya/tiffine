@@ -15,12 +15,14 @@
     "migrate": "tsx scripts/migrate.mts",
     "seed:owner": "tsx scripts/seed-owner.mts",
     "verify:settlement": "tsx scripts/verify-settlement.mts",
-    "verify:push": "tsx scripts/verify-push.mts"
+    "verify:push": "tsx scripts/verify-push.mts",
+    "check:cron": "tsx scripts/check-cron.mts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
     "@hookform/resolvers": "^5.4.0",
     "@neondatabase/serverless": "^1.1.0",
+    "@upstash/qstash": "^2.11.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 
 /**
- * Liveness probe and keep-alive target.
+ * Liveness probe.
  *
- * Render's free web service sleeps after ~15 minutes idle and takes ~50s to
- * wake. That cold start would land at exactly the wrong moment — someone taps
- * the WhatsApp link at 10:25 with five minutes to order. A scheduled ping to
- * this route during working hours keeps the instance warm.
+ * Used to confirm a deploy is serving, and as the target for an uptime monitor
+ * if one is ever added. Vercel's serverless functions don't idle-sleep, so no
+ * keep-alive ping is required there; a host that does sleep (Render's free web
+ * service, for instance) would need one pointed here.
  *
- * Deliberately does NOT touch the database: it runs every few minutes, and
- * waking Neon's compute on each ping would burn the free tier's hours for no
- * benefit. Warming the *web* process is the whole job.
+ * Deliberately does NOT touch the database: an uptime check runs frequently,
+ * and waking Neon's compute on each ping would burn free-tier hours for no
+ * benefit. Confirming the *web* process responds is the whole job.
  *
  * Unauthenticated on purpose — it exposes nothing and must stay reachable by
- * any uptime checker.
+ * any checker.
  */
 export const dynamic = "force-dynamic";
 

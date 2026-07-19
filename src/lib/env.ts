@@ -20,6 +20,14 @@ const serverSchema = z.object({
 
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters").optional(),
 
+  // QStash schedules the per-day deadline callback. Optional so the app still
+  // boots without it — deadlines are then enforced on read (the ordering page
+  // and API both check), just without the automatic close and admin summary.
+  QSTASH_TOKEN: z.string().min(1).optional(),
+  QSTASH_URL: z.string().url().optional(),
+  QSTASH_CURRENT_SIGNING_KEY: z.string().min(1).optional(),
+  QSTASH_NEXT_SIGNING_KEY: z.string().min(1).optional(),
+
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

@@ -17,6 +17,7 @@ import { AppError, errors } from "@/lib/api/errors";
 import { formatPaise, sumPaise, type Paise } from "@/lib/money";
 import { formatDayShort, formatTime } from "@/lib/time";
 import { sendPushToAdmins, sendPushToPeople } from "@/lib/push";
+import { cancelDeadlineClose, scheduleDeadlineClose } from "@/lib/scheduler";
 
 /**
  * Closing a day, handing counts to the provider, and re-polling.
@@ -138,6 +139,12 @@ export async function lockDay(
     entityId: menuDayId,
     detail: { automatic: actorId === null },
   });
+
+  // Closed early, so the scheduled callback is now redundant. Cancelling is
+  // best-effort — the callback re-checks status, so a late delivery is a no-op.
+  void cancelDeadlineClose(menuDayId).catch((error) =>
+    console.error("[scheduler] cancel on lock failed", error),
+  );
 
   // Tell the admins the counts are final and ready to send.
   const summary = await getProviderSummary(menuDayId);
@@ -372,6 +379,13 @@ export async function openRepoll(
     .update(menuDays)
     .set({ status: "published", deadlineAt: input.deadlineAt, lockedAt: null })
     .where(eq(menuDays.id, day.id));
+
+  // The new round has its own deadline, so the day needs a fresh callback.
+  void scheduleDeadlineClose({
+    menuDayId: day.id,
+    dateKey: input.dateKey,
+    deadlineAt: input.deadlineAt,
+  }).catch((error) => console.error("[scheduler] repoll schedule failed", error));
 
   await db.insert(auditLog).values({
     actorId: viewer.id,
