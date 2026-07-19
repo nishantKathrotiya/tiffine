@@ -71,26 +71,39 @@ export function AppShell({
   ];
 
   return (
-    <div className="flex min-h-full flex-col md:flex-row">
-      {/* Desktop sidebar */}
-      <aside className="border-line bg-surface hidden w-60 shrink-0 flex-col border-r md:flex">
+    /**
+     * On desktop the shell is pinned to the viewport (`md:h-dvh`) rather than
+     * growing with the page. The sidebar then always spans exactly the screen
+     * height and never scrolls; only the main column does.
+     *
+     * `min-h-dvh` on mobile keeps the normal page-scroll behaviour, where the
+     * bottom nav is fixed and the document scrolls underneath it.
+     */
+    <div className="flex min-h-dvh flex-col md:h-dvh md:flex-row md:overflow-hidden">
+      {/* Desktop sidebar — fixed height, own scroll only if the nav overflows */}
+      <aside className="border-line bg-surface hidden w-60 shrink-0 flex-col border-r md:flex md:h-dvh">
         <div className="border-line border-b px-5 py-4">
           <p className="text-title text-text">Tiffine</p>
           <p className="text-caption text-text-muted mt-0.5 truncate">{viewer.name}</p>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3">
+        {/* Scrolls internally only if the nav list outgrows a short screen —
+            the header and sign-out stay pinned either way. */}
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
           {sidebarItems.map((item) => (
             <NavLink key={item.href} item={item} badge={badgeFor(item, pendingCount)} />
           ))}
         </nav>
 
-        <div className="border-line border-t p-3">
+        <div className="border-line shrink-0 border-t p-3">
           <SignOutButton />
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* min-h-0 is required: without it a flex child refuses to shrink below
+          its content, and the main column would push the page taller instead
+          of scrolling inside its own box. */}
+      <div className="flex min-w-0 flex-1 flex-col md:min-h-0">
         {/* Mobile header */}
         <header className="border-line bg-surface flex items-center justify-between border-b px-4 py-3 md:hidden">
           <span className="text-title text-text">Tiffine</span>
@@ -108,12 +121,27 @@ export function AppShell({
           </div>
         </header>
 
-        {/* Clears the fixed bottom nav (56px) plus the iOS home indicator.
-            Computed rather than a fixed pb-24, which left the last row of a
-            long list sitting under the nav. */}
+        {/*
+         * The scroll container on desktop: `overflow-y-auto` keeps scrolling
+         * inside this column so the sidebar stays put.
+         *
+         * Bottom padding clears the fixed mobile nav (56px) plus the iOS home
+         * indicator. It is applied via a CSS variable that md: resets to 0 —
+         * an inline style would apply at every width and leave a phantom gap
+         * on desktop, where there is no bottom nav.
+         */}
         <main
-          className="min-w-0 flex-1 px-4 py-6 md:px-8 md:pb-8"
-          style={{ paddingBottom: "calc(56px + env(safe-area-inset-bottom, 0px) + 24px)" }}
+          className={cn(
+            "min-w-0 flex-1 px-4 py-6 md:px-8 md:pb-8",
+            "md:min-h-0 md:overflow-y-auto",
+            "pb-(--mobile-nav-clearance) md:pb-8",
+          )}
+          style={
+            {
+              "--mobile-nav-clearance":
+                "calc(56px + env(safe-area-inset-bottom, 0px) + 24px)",
+            } as React.CSSProperties
+          }
         >
           {children}
         </main>
