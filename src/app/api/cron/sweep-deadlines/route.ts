@@ -6,20 +6,27 @@ import { env } from "@/lib/env";
 /**
  * Deadline sweeper.
  *
- * Vercel Cron cannot fire at an arbitrary per-record timestamp, so this runs
+ * A scheduler cannot fire at an arbitrary per-record timestamp, so this runs
  * every few minutes and closes any day whose deadline has passed. It is
  * idempotent — lockDay only transitions `published` rows — so overlapping runs
  * cannot double-fire notifications.
  *
- * Schedule in vercel.json:
- *   { "path": "/api/cron/sweep-deadlines", "schedule": "*\/5 * * * *" }
+ * Deliberately host-agnostic: it is just an authenticated HTTPS GET, so any
+ * scheduler can drive it (Render cron job, GitHub Actions, cron-job.org, or a
+ * plain curl). See DEPLOY.md.
+ *
+ *   curl -H "Authorization: Bearer $CRON_SECRET" \
+ *        https://<host>/api/cron/sweep-deadlines
  */
 export async function GET(request: Request) {
-  // Vercel Cron sends this header; a shared secret covers manual/local runs.
-  // Without a guard, anyone could hammer the endpoint and close days early.
+  // The endpoint is a public URL, so without a guard anyone could hammer it and
+  // close polls early. Two accepted callers:
+  //   1. A scheduler presenting the shared secret (works on any host).
+  //   2. Vercel's own cron, which injects this header — kept so the app still
+  //      works unchanged if it is ever deployed there.
   const authHeader = request.headers.get("authorization");
   const isVercelCron = request.headers.get("x-vercel-cron") !== null;
-  const hasSecret = env.CRON_SECRET && authHeader === `Bearer ${env.CRON_SECRET}`;
+  const hasSecret = Boolean(env.CRON_SECRET) && authHeader === `Bearer ${env.CRON_SECRET}`;
 
   if (!isVercelCron && !hasSecret) {
     return NextResponse.json(
