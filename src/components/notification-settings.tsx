@@ -63,6 +63,9 @@ function isStandalone(): boolean {
 export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: string }) {
   const [state, setState] = useState<State>("loading");
   const [isWorking, setIsWorking] = useState(false);
+  // Held on screen rather than shown as a toast: the person seeing it often
+  // has to relay it to whoever can fix it.
+  const [enableError, setEnableError] = useState<string | null>(null);
 
   useEffect(() => {
     void detectState();
@@ -124,6 +127,7 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
 
   async function enable() {
     setIsWorking(true);
+    setEnableError(null);
 
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
@@ -136,7 +140,11 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setState(permission === "denied" ? "denied" : "unsubscribed");
-        toast.error("Notifications weren't allowed.");
+        setEnableError(
+          permission === "denied"
+            ? "You tapped Don't Allow. Re-enable notifications for this site in your browser settings, then try again."
+            : "The permission prompt was dismissed. Tap the button again and choose Allow.",
+        );
         return;
       }
 
@@ -152,7 +160,7 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
       });
 
       if (!result.ok) {
-        toast.error(result.error.message);
+        setEnableError(result.error.message);
         return;
       }
 
@@ -160,10 +168,45 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
       toast.success("Notifications on.");
     } catch (error) {
       console.error("[push] enable failed", error);
-      toast.error("Couldn't turn notifications on. Try again.");
+      // A generic "try again" is useless here: each of these has a different
+      // fix, and the person hitting it is usually not the one who can debug it.
+      setEnableError(describeEnableFailure(error));
     } finally {
       setIsWorking(false);
     }
+  }
+
+  /**
+   * Turn a subscribe failure into something the person can act on.
+   *
+   * The common causes are all environmental — an unsupported browser, a
+   * private window, a stale worker from a previous key — and none of them are
+   * distinguishable from the default message.
+   */
+  function describeEnableFailure(error: unknown): string {
+    const name = (error as { name?: string })?.name ?? "";
+    const message = (error as { message?: string })?.message ?? String(error);
+
+    if (name === "NotAllowedError") {
+      return "Your browser blocked the request. Check that notifications aren't disabled for this site, then try again.";
+    }
+
+    if (name === "AbortError" || /push service|registration failed/i.test(message)) {
+      // Typical on Android when Play Services is unavailable, and in private
+      // windows where the push service is deliberately unreachable.
+      return "Your browser couldn't reach its push service. If you're in a private window, try a normal one. On Android, make sure Google Play Services is enabled.";
+    }
+
+    if (name === "NotSupportedError") {
+      return "This browser doesn't support push notifications. On iPhone use Safari and add Tiffine to your home screen; on Android use Chrome.";
+    }
+
+    if (/applicationServerKey|InvalidAccessError|InvalidStateError/i.test(name + message)) {
+      // A worker subscribed under a different VAPID key refuses a new one.
+      return "There's an old notification setup on this device. Clear this site's data in your browser settings, reload, and try again.";
+    }
+
+    return `Couldn't turn notifications on (${name || "unknown error"}). Try reloading, or use a different browser.`;
   }
 
   async function disable() {
@@ -273,6 +316,14 @@ export function NotificationSettings({ vapidPublicKey }: { vapidPublicKey: strin
 
         {state === "unsubscribed" && (
           <>
+            {enableError && (
+              <div
+                role="alert"
+                className="border-danger-border bg-danger-subtle rounded-md border px-3 py-2.5"
+              >
+                <p className="text-danger text-body">{enableError}</p>
+              </div>
+            )}
             <p className="text-text-muted text-body">
               Optional — the menu link still goes to the group chat either way.
             </p>
